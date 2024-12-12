@@ -1,12 +1,11 @@
-## takako
+## takakonfig
 #
 from libqtile import bar, layout, qtile, widget
 from libqtile.config import Click, Drag, Group, Key, Match, Screen
 from libqtile.lazy import lazy
-from libqtile.utils import guess_terminal
 
 mod = "mod4"
-terminal = guess_terminal()
+terminal = "foot"
 
 keys = [
     # A list of available commands that can be bound to keys can be found
@@ -53,7 +52,23 @@ keys = [
     Key([mod], "v", lazy.window.toggle_floating(), desc="Toggle floating on the focused window"),
     Key([mod], "m", lazy.reload_config(), desc="Reload the config"),
     Key([mod, "control"], "m", lazy.shutdown(), desc="Shutdown Qtile"),
-    Key([mod], "d", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
+    #Key([mod], "d", lazy.spawncmd(), desc="Spawn a command using a prompt widget"),
+    Key([mod], "d", lazy.spawn("fuzzel"), desc="Drun"),
+    Key([mod], "s", lazy.spawn("bash /home/takako/.local/bin/screenshot"), desc="Screenshot"),
+
+    Key([mod], "y", lazy.spawn("mpc volume -10"), desc="Mpd volume down"),
+    Key([mod], "u", lazy.spawn("mpc prev"), desc="Mpd previous"),
+    Key([mod], "0x2b9", lazy.spawn("mpc toggle"), desc="Mpd play-pause"), # I
+    Key([mod], "o", lazy.spawn("mpc next"), desc="Mpd next"),
+    Key([mod], "p", lazy.spawn("mpc volume +10"), desc="Mpd volume up"), # Ğ
+    Key([mod], "0xfc", lazy.spawn("foot ncmpcpp"), desc="Launch mpd client"), # Ü
+
+    Key([], "XF86AudioLowerVolume", lazy.spawn("pactl set-sink-volume @DEFAULT_SINK@ -5%"), desc="Lower audio"),
+    Key([], "XF86AudioRaiseVolume", lazy.spawn("pactl set-sink-volume @DEFAULT_SINK@ +5%"), desc="Raise audio"),
+    Key([], "XF86AudioMute", lazy.spawn("pactl set-sink-mute @DEFAULT_SINK@ toggle"), desc="Mute audio"),
+    Key([], "XF86AudioMicMute", lazy.spawn("pactl set-source-mute @DEFAULT_SINK@ toggle"), desc="Mute audio"),
+    Key([], "XF86MonBrightnessDown", lazy.spawn("brightnessctl set 20-"), desc="Lower brightness"),
+    Key([], "XF86MonBrightnessUp", lazy.spawn("brightnessctl set +20"), desc="Raise brightness"),
 ]
 
 # Add key bindings to switch VTs in Wayland.
@@ -96,15 +111,25 @@ for i in groups:
         ]
     )
 
+# COLORS
+color0="#49243e"
+color1="#704264"
+color2="#bb8493"
+color3="#dbafa0"
+transparant="#00000000"
+
+
 layouts = [
     layout.Columns(
-        border_focus_stack=["#49243E", "#1d0e1900"],
-        border_focus="#49243E",
-        border_normal="#1d0e1900",
+        border_focus_stack=[color3, color1],
+        border_normal_stack=[color0, color0],
+        border_focus=color2,
+        border_normal=color0,
         border_width=3,
-        margin=2,
+        border_on_single=False,
+        margin=5,
     ),
-    layout.Max(),
+    layout.Max(margin=5),
     # Try more layouts by unleashing below layouts.
     # layout.Stack(num_stacks=2),
     # layout.Bsp(),
@@ -119,30 +144,70 @@ layouts = [
 ]
 
 widget_defaults = dict(
-    font="UbuntuMono-R",
-    fontsize=22,
-    padding=5,
-    background="#49243E"
+    font="CaskaydiaCove Nerd Font",
+    fontsize=20,
+    padding=10,
+    background=color0
 )
 extension_defaults = widget_defaults.copy()
 
 screens = [
     Screen(
-        background="#1d0e19",
+        #background="#371b30",
+        background="#261321",
         wallpaper="~/.config/qtile/background.jpg",
-        bottom=bar.Bar(
+        wallpaper_mode="fill",
+        top=bar.Bar(
             [
-                widget.CurrentLayout(background="#772244"),
+                widget.CurrentLayout(
+                    background=color1,
+                    padding=7,
+                ),
                 widget.GroupBox(
                     highlight_method="block",
-                    highlight_color=["#ff0000","#ff00ff"],
+                    this_screen_border=color1,
+                    this_current_screen_border=color2,
+                    block_highlight_text_color=color0,
                     active="#ffffff",
-                    inactive="#dbafa0",
+                    inactive=color1,
                     rounded = False,
+                    padding=6,
                 ),
                 widget.Prompt(),
-                widget.WindowName(
-                    foreground = "#dbafa0"
+                widget.Mpd2(
+                    background=color1,
+                    status_format='{play_status} {artist} - {title}',
+                    no_connection='',
+                    play_states={
+                        'pause': '',
+                        'play': '',
+                        'stop': ''
+                    },
+                    mouse_buttons={
+                        1: 'toggle',
+                        2: 'prev',
+                        3: 'next',
+                    },
+                ),
+                widget.Spacer(),
+                widget.PulseVolume(
+                    fmt='Vol: {}',
+                    #emoji=True,
+                ),
+                widget.Wlan(
+                    background=color1,
+                    update_interval=3,
+                    format='{essid} {percent:0.0%}'
+                ),
+                widget.Battery(
+                    notify_below=15,
+                    update_interval=3,
+                    format='{char}{percent:2.0%} {watt:.2f}W',
+                    charge_char="+",
+                    discharge_char="",
+                    full_char="",
+                    low_percentage=0.25,
+                    low_foreground="f4d366",
                 ),
                 widget.Chord(
                     chords_colors={
@@ -150,20 +215,16 @@ screens = [
                     },
                     name_transform=lambda name: name.upper(),
                 ),
-                widget.TextBox("takakako", name="user", background="#313131"),
-                # NB Systray is incompatible with Wayland, consider using StatusNotifier instead
+                #widget.TextBox("takakako", name="user"),
                 widget.StatusNotifier(),
                 widget.Systray(),
-                widget.Clock(format="%d/%m %a %H:%M", background="#316286"),
+                widget.Clock(format="%d/%m %a %H:%M", background=color1),
             ],
             32,
-            border_width=[3, 5, 4, 5],  # Draw top and bottom borders
+            border_width=[6, 5, 1, 5],
             border_color="#00000000"
-            # border_color=["ff00ff", "000000", "ff00ff", "000000"]  # Borders are magenta
+            #border_color=["ff00ff", "000000", "ff00ff", "000000"]
         ),
-        # You can uncomment this variable if you see that on X11 floating resize/moving is laggy
-        # By default we handle these events delayed to already improve performance, however your system might still be struggling
-        # This variable is set to None (no cap) by default, but you can set it to 60 to indicate that you limit it to 60 events per second
         # x11_drag_polling_rate = 60,
     ),
 ]
@@ -183,6 +244,9 @@ bring_front_click = False
 floats_kept_above = True
 cursor_warp = False
 floating_layout = layout.Floating(
+    border_focus=color2,
+    border_normal=color1,
+    border_width=0,
     float_rules=[
         # Run the utility of `xprop` to see the wm class and name of an X client.
         *layout.Floating.default_float_rules,
@@ -192,6 +256,7 @@ floating_layout = layout.Floating(
         Match(wm_class="ssh-askpass"),  # ssh-askpass
         Match(title="branchdialog"),  # gitk
         Match(title="pinentry"),  # GPG key password entry
+        Match(title="Library"),
     ]
 )
 auto_fullscreen = True
@@ -206,13 +271,19 @@ from libqtile.backend.wayland import InputConfig
 
 wl_input_rules = {
     "*": InputConfig(pointer_accel=-1),
-    "type:touchpad": InputConfig(accel_profile="flat",pointer_accel=0.5,tap=True),
-    "type:keyboard": InputConfig(kb_layout="tr",kb_options="caps:swapescape"),
+    "type:touchpad": InputConfig(
+        accel_profile="flat",
+        pointer_accel=0.5,
+        scroll_factor=0.1,
+        tap=True),
+    "type:keyboard": InputConfig(
+        kb_layout="tr",
+        kb_options="caps:swapescape"),
 }
 
 # xcursor theme (string or None) and size (integer) for Wayland backend
 wl_xcursor_theme = None
-wl_xcursor_size = 32
+wl_xcursor_size = 12
 
 # We choose LG3D to maximize irony: it is a 3D non-reparenting WM written in
 # java that happens to be on java's whitelist.
